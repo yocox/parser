@@ -24,7 +24,7 @@ TEST(SeqTest, MatchSequence) {
   EXPECT_EQ(std::get<2>(*r), 'c');
 }
 
-TEST(SeqTest, TwoLit) {
+TEST(SeqTest, RuleRule) {
   auto lit_a = Lit<'a'>{};
   auto lit_b = Lit<'b'>{};
   auto combined_seq = lit_a >> lit_b;
@@ -39,11 +39,11 @@ TEST(SeqTest, TwoLit) {
   EXPECT_EQ(std::get<1>(*r), 'b');
 }
 
-TEST(SeqTest, ThreeLit) {
+TEST(SeqTest, SeqRule) {
   auto lit_a = Lit<'a'>{};
   auto lit_b = Lit<'b'>{};
   auto lit_c = Lit<'c'>{};
-  auto combined_seq = lit_a >> lit_b >> lit_c;
+  auto combined_seq = (lit_a >> lit_b) >> lit_c;
 
   std::string input = "abc";
   auto b = input.begin();
@@ -56,7 +56,24 @@ TEST(SeqTest, ThreeLit) {
   EXPECT_EQ(std::get<2>(*r), 'c');
 }
 
-TEST(SeqTest, TwoSeq) {
+TEST(SeqTest, RuleSeq) {
+  auto lit_a = Lit<'a'>{};
+  auto lit_b = Lit<'b'>{};
+  auto lit_c = Lit<'c'>{};
+  auto combined_seq = lit_a >> (lit_b >> lit_c);
+
+  std::string input = "abc";
+  auto b = input.begin();
+  auto e = input.end();
+  auto r = combined_seq.match(b, e);
+
+  ASSERT_TRUE(r.has_value());
+  EXPECT_EQ(std::get<0>(*r), 'a');
+  EXPECT_EQ(std::get<1>(*r), 'b');
+  EXPECT_EQ(std::get<2>(*r), 'c');
+}
+
+TEST(SeqTest, SeqSeq) {
   auto lit_a = Lit<'a'>{};
   auto lit_b = Lit<'b'>{};
   auto lit_c = Lit<'c'>{};

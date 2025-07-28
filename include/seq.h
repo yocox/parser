@@ -6,18 +6,12 @@
 #include <type_traits>
 
 template <typename Head, typename... Tail>
-std::tuple<Tail...> tuple_slice(std::tuple<Head, Tail...> &t) {
+std::tuple<Tail...> tuple_tail(std::tuple<Head, Tail...> &t) {
   return std::apply(
       [](auto &&, auto &&...tail) {
         return std::make_tuple(std::forward<decltype(tail)>(tail)...);
       },
       std::forward<std::tuple<Head, Tail...>>(t));
-}
-
-template <typename T> void print_type_at_compile_time() {
-  // This static_assert will always fail, and the error message
-  // will contain the type T within __PRETTY_FUNCTION__.
-  static_assert(std::is_same_v<T, void>, "Type information below:");
 }
 
 template <typename Head, typename... Tail> struct Seq : Rule {
@@ -40,7 +34,7 @@ template <typename Head, typename... Tail> struct Seq : Rule {
       return std::make_tuple(
           std::move(*head_result)); // Return the matched head as a tuple
     } else {
-      auto rule_tail = tuple_slice(rules);
+      auto rule_tail = tuple_tail(rules);
       auto seq_tail =
           std::make_from_tuple<Seq<std::decay_t<Tail>...>>(rule_tail);
 
@@ -76,6 +70,17 @@ Seq<Head..., Tail> operator>>(const Seq<Head...> &head, const Tail &tail) {
             std::forward<decltype(head_rules)>(head_rules)..., tail);
       },
       head.rules);
+}
+
+template <IsRule Head, IsRule... Tail>
+Seq<Head, Tail...> operator>>(const Head &head, const Seq<Tail...> &tail) {
+  return std::apply(
+      [&](auto &&...tail_rules) {
+        return Seq<typename std::decay_t<Head>,
+                   typename std::decay_t<decltype(tail_rules)>...>(
+            head, std::forward<decltype(tail_rules)>(tail_rules)...);
+      },
+      tail.rules);
 }
 
 template <IsRule... Head, IsRule... Tail>
